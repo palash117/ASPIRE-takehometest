@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	POPPULAR_FOLLOW_COUNT = 3
+	POPPULAR_FOLLOW_COUNT = 5
 	PAGE_SIZE             = 10
 )
 

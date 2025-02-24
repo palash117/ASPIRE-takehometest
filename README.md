@@ -133,5 +133,5 @@ curl --location 'http://localhost:8080/twitter/1/timeline?pageNo=0'
 the curl returns the feed for Frieren (1) which contains the post from  Himmel(3)
 
 ## Key notes
-For users with follower count > 3 ( currently hardcoded due to lack of time)
+For users with follower count > 5 ( currently hardcoded due to lack of time)
 the newly created posts from these users are not duplicated in the timeline table for all following users. 
