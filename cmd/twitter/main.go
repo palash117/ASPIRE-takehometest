@@ -15,6 +15,7 @@ import (
 var (
 	dependencies *internal.Dependencies
 	cntrlr       controller.Controller
+	lg           common.Logger
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 
 func initialize() {
 
-	lg := common.NewLogger()
+	lg = common.NewLogger()
 	db := db.SetupDb()
 	dependencies := service.NewServiceDependencies(db, lg)
 	cntrlr = controller.NewController(dependencies, lg)
@@ -32,6 +33,8 @@ func initialize() {
 func startServer() {
 	r := mux.NewRouter()
 	cntrlr.RegistreRoutes(r)
+	lg.Println("Starting at 8080")
+
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		dependencies.Logger.Println(fmt.Sprintf("err is %s", err))

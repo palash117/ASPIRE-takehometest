@@ -1,4 +1,8 @@
 Twitter apis 
+
+## To run project:
+use build.sh to build and run the go project 
+
 ## Architecture:
 The system is divided into 4 modules which right now are written in all together in a same service. Idealy the modules should be deployed seperately so that we can scale them independenly of each other. 
 

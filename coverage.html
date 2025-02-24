@@ -1,0 +1,1246 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>twitter: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">twitter/cmd/twitter/main.go (0.0%)</option>
+				
+				<option value="file1">twitter/internal/common/dependencies.go (100.0%)</option>
+				
+				<option value="file2">twitter/internal/controller/handler.go (64.7%)</option>
+				
+				<option value="file3">twitter/internal/controller/router.go (8.3%)</option>
+				
+				<option value="file4">twitter/internal/dao/post.go (88.9%)</option>
+				
+				<option value="file5">twitter/internal/dao/timeline.go (83.3%)</option>
+				
+				<option value="file6">twitter/internal/dao/user.go (97.4%)</option>
+				
+				<option value="file7">twitter/internal/db/db.go (33.3%)</option>
+				
+				<option value="file8">twitter/internal/model/post.go (100.0%)</option>
+				
+				<option value="file9">twitter/internal/model/timeline.go (100.0%)</option>
+				
+				<option value="file10">twitter/internal/model/user.go (100.0%)</option>
+				
+				<option value="file11">twitter/internal/service/post.go (88.2%)</option>
+				
+				<option value="file12">twitter/internal/service/service.go (100.0%)</option>
+				
+				<option value="file13">twitter/internal/service/timeline.go (88.0%)</option>
+				
+				<option value="file14">twitter/internal/service/user.go (87.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "fmt"
+        "net/http"
+        "twitter/internal"
+        "twitter/internal/common"
+        "twitter/internal/controller"
+        "twitter/internal/db"
+        "twitter/internal/service"
+
+        "github.com/gorilla/mux"
+)
+
+var (
+        dependencies *internal.Dependencies
+        cntrlr       controller.Controller
+)
+
+func main() <span class="cov0" title="0">{
+        initialize()
+        startServer()
+}</span>
+
+func initialize() <span class="cov0" title="0">{
+
+        lg := common.NewLogger()
+        db := db.SetupDb()
+        dependencies := service.NewServiceDependencies(db, lg)
+        cntrlr = controller.NewController(dependencies, lg)
+}</span>
+func startServer() <span class="cov0" title="0">{
+        r := mux.NewRouter()
+        cntrlr.RegistreRoutes(r)
+        err := http.ListenAndServe(":8080", r)
+        if err != nil </span><span class="cov0" title="0">{
+                dependencies.Logger.Println(fmt.Sprintf("err is %s", err))
+
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package common
+
+import (
+        "log"
+        "os"
+)
+
+type Logger interface {
+        Println(string)
+}
+
+type logger struct {
+        logger *log.Logger
+}
+
+func NewLogger() Logger <span class="cov8" title="1">{
+        lg := &amp;logger{}
+        lg.logger = log.New(os.Stdout, "twitter:", log.LstdFlags)
+        return lg
+}</span>
+
+func (l *logger) Println(str string) <span class="cov8" title="1">{
+        l.logger.Println(str)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package controller
+
+import (
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "strconv"
+        "twitter/internal/dto"
+
+        "github.com/gorilla/mux"
+)
+
+func (c *cntrlr) CreatePostHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        var (
+                createPostReq  dto.CreatePostRequest
+                createPostResp *dto.CreatePostResponse
+                err            error
+        )
+        defer r.Body.Close()
+        err = json.NewDecoder(r.Body).Decode(&amp;createPostReq)
+
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">createPostReq.AuthorId, err = getUserId(r)
+
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">httpErr := validatePostReq(&amp;createPostReq)
+        if httpErr != nil </span><span class="cov8" title="1">{
+                c.handleHttpErrObj(httpErr, http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">createPostResp, err = c.dependencies.PostService.CreatePost(r.Context(), &amp;createPostReq)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(createPostResp, http.StatusOK, w)</span>
+
+}
+func (c *cntrlr) GetTimelineHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        var (
+                getTimelineReq  dto.GetTimelineForUserRequest
+                getTimelineResp *dto.GetTimelineForUserResponse
+                err             error
+        )
+        getTimelineReq.UserId, err = getUserId(r)
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">getTimelineReq.PageNo = getPageNo(r)
+        getTimelineResp, err = c.dependencies.TimelineService.GetTimelineForUser(r.Context(), &amp;getTimelineReq)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(getTimelineResp, http.StatusOK, w)</span>
+
+}
+
+// managment apis
+func (c *cntrlr) CreateUserHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        var (
+                createUserReq  dto.CreateUserRequest
+                createUserResp *dto.CreateUserResponse
+                err            error
+        )
+        defer r.Body.Close()
+        err = json.NewDecoder(r.Body).Decode(&amp;createUserReq)
+
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">createUserResp, err = c.dependencies.UserService.CreateUser(r.Context(), &amp;createUserReq)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(createUserResp, http.StatusOK, w)</span>
+
+}
+
+func (c *cntrlr) GetFollowersHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        var (
+                req  = dto.GetFollowerUsersRequest{}
+                resp *dto.GetFollowerUsersResponse
+                err  error
+        )
+
+        req.PrimaryUserId, err = getUserId(r)
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">resp, err = c.dependencies.UserService.GetFollowerUsers(r.Context(), &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(resp, http.StatusOK, w)</span>
+
+}
+
+func (c *cntrlr) FollowUserHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        c.lg.Println("GetFollowees called")
+
+        var (
+                req  = dto.FollowUserRequest{}
+                resp *dto.FollowUserResponse
+                err  error
+        )
+        defer r.Body.Close()
+        err = json.NewDecoder(r.Body).Decode(&amp;req)
+
+        req.FollowerUserId, err = getUserId(r)
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">resp, err = c.dependencies.UserService.FollowUser(r.Context(), &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(resp, http.StatusOK, w)</span>
+
+}
+
+func (c *cntrlr) GetFolloweesHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        c.lg.Println("GetFollowees called")
+
+        var (
+                req  = dto.GetFollowingUsersRequest{}
+                resp *dto.GetFollowingUsersResponse
+                err  error
+        )
+        req.PrimaryUserId, err = getUserId(r)
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">resp, err = c.dependencies.UserService.GetFollowingUsers(r.Context(), &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(resp, http.StatusOK, w)</span>
+
+}
+
+func (c *cntrlr) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        c.lg.Println("calling GetAllUsers")
+
+        var (
+                req  dto.GetAllUsersRequest
+                resp *dto.GetAllUsersResponse
+                err  error
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                c.handleHttpErr(fmt.Sprintf("err parsing req: %s", err), http.StatusBadRequest, w)
+                return
+        }</span>
+        <span class="cov8" title="1">resp, err = c.dependencies.UserService.GetAllUsers(r.Context(), &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+
+                c.handleHttpErr(fmt.Sprintf("internal err %s", err), http.StatusInternalServerError, w)
+                return
+        }</span>
+        <span class="cov8" title="1">c.writeToResponseStream(resp, http.StatusOK, w)</span>
+
+}
+
+func (c *cntrlr) writeToResponseStream(resp any, statusCode int, w http.ResponseWriter) <span class="cov8" title="1">{
+        //respJson, _ := json.Marshal(resp)
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(resp)
+}</span>
+func getUserId(r *http.Request) (dto.Id, error) <span class="cov8" title="1">{
+        pathParams := mux.Vars(r)
+        id, err := strconv.Atoi(pathParams["user_id"])
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("invalid user_id")
+        }</span>
+        <span class="cov8" title="1">return dto.Id(id), nil</span>
+}
+
+// func getQueryParam(r *http.Request, query string)
+type HttpError struct {
+        Field   string `json:"field"`
+        Message string `json:"message"`
+}
+
+func (h *HttpError) Error() string <span class="cov0" title="0">{
+        if h.Field != "" </span><span class="cov0" title="0">{
+                return fmt.Sprintf("field: %s, messge: %s", h.Field, h.Message)
+        }</span>
+        <span class="cov0" title="0">return fmt.Sprintf("message: %s", h.Message)</span>
+}
+
+func getPageNo(r *http.Request) int <span class="cov8" title="1">{
+        pageNoStr := r.URL.Query().Get("pageNo")
+        pageNo, _ := strconv.Atoi(pageNoStr)
+        if pageNo &lt; 0 </span><span class="cov0" title="0">{
+                pageNo = 0
+        }</span>
+        <span class="cov8" title="1">return pageNo</span>
+}
+
+func (c *cntrlr) handleHttpErr(errString string, statusCode int, w http.ResponseWriter) <span class="cov0" title="0">{
+        c.lg.Println(errString)
+        herr := &amp;HttpError{Message: errString}
+        c.handleHttpErrObj(herr, statusCode, w)
+        return
+}</span>
+func (c *cntrlr) handleHttpErrObj(err *HttpError, statusCode int, w http.ResponseWriter) <span class="cov8" title="1">{
+        errString, _ := json.Marshal(err)
+        http.Error(w, string(errString), statusCode)
+        return
+}</span>
+func validatePostReq(req *dto.CreatePostRequest) *HttpError <span class="cov8" title="1">{
+        if len(req.Subject) &gt; 50 </span><span class="cov8" title="1">{
+                return &amp;HttpError{Field: "subject", Message: "Larger than limit 50"}
+        }</span>
+        <span class="cov8" title="1">if len(req.Contents) &gt; 100 </span><span class="cov8" title="1">{
+                return &amp;HttpError{Field: "contents", Message: "Larger than limit 100"}
+        }</span>
+        <span class="cov8" title="1">if len(req.Subject) == 0 </span><span class="cov0" title="0">{
+                return &amp;HttpError{Field: "subject", Message: "Empty not allowerd"}
+        }</span>
+        <span class="cov8" title="1">if len(req.Contents) == 100 </span><span class="cov0" title="0">{
+                return &amp;HttpError{Field: "contents", Message: "Empty not allowed"}
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package controller
+
+import (
+        "net/http"
+        "twitter/internal/common"
+        "twitter/internal/service"
+
+        "github.com/gorilla/mux"
+)
+
+type Controller interface {
+        RegistreRoutes(*mux.Router)
+        CreatePostHandler(w http.ResponseWriter, r *http.Request)
+        GetTimelineHandler(w http.ResponseWriter, r *http.Request)
+        CreateUserHandler(w http.ResponseWriter, r *http.Request)
+        GetFollowersHandler(w http.ResponseWriter, r *http.Request)
+        FollowUserHandler(w http.ResponseWriter, r *http.Request)
+        GetFolloweesHandler(w http.ResponseWriter, r *http.Request)
+        GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
+}
+
+func NewController(dependencies *service.ServiceDependencies, lg common.Logger) Controller <span class="cov8" title="1">{
+        return &amp;cntrlr{dependencies: dependencies, lg: lg}
+}</span>
+
+type cntrlr struct {
+        dependencies *service.ServiceDependencies
+        lg           common.Logger
+}
+
+func (c *cntrlr) RegistreRoutes(r *mux.Router) <span class="cov0" title="0">{
+
+        twitterRouter := r.PathPrefix("/twitter").Subrouter()
+        twitterRouter.HandleFunc("/user", c.CreateUserHandler).Methods("Post")
+        twitterRouter.HandleFunc("/user/all", c.GetAllUsersHandler).Methods("Get")
+        twitterRouter.HandleFunc("/{user_id}/post", c.CreatePostHandler).Methods("Post")
+        twitterRouter.HandleFunc("/{user_id}/timeline", c.GetTimelineHandler).Methods("Get")
+        twitterRouter.HandleFunc("/user/{user_id}/followers", c.GetFollowersHandler).Methods("Get")
+        twitterRouter.HandleFunc("/user/{user_id}/following", c.GetFolloweesHandler).Methods("Get")
+        twitterRouter.HandleFunc("/user/{user_id}/follow", c.FollowUserHandler).Methods("Post")
+
+        twitterRouter.Use(mux.CORSMethodMiddleware(r))
+        twitterRouter.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                http.Error(w, "Route not found", http.StatusNotFound)
+        }</span>)
+
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package dao
+
+import (
+        "context"
+        "time"
+        "twitter/internal/db"
+        "twitter/internal/model"
+
+        "gorm.io/gorm"
+)
+
+type PostDao interface {
+        GetPostsByAuthorIdsAndTimeWindow(ctx context.Context, authorIds []int, from, till time.Time) ([]*model.Post, error)
+        Create(ctx context.Context, mdl *model.Post) (*model.Post, error)
+}
+type postDao struct {
+        db *gorm.DB
+}
+
+func NewPostDao(db *db.Db) PostDao <span class="cov8" title="1">{
+        return &amp;postDao{db: db.DB}
+}</span>
+
+func (p *postDao) AutoMigrate(dropTable bool) <span class="cov8" title="1">{
+        if dropTable </span><span class="cov0" title="0">{
+                p.db.Migrator().DropTable(&amp;model.Timeline{})
+        }</span>
+        <span class="cov8" title="1">p.db.AutoMigrate(&amp;model.Post{})</span>
+}
+func (p *postDao) Create(ctx context.Context, mdl *model.Post) (*model.Post, error) <span class="cov8" title="1">{
+        rslt := p.db.Create(mdl)
+        return mdl, rslt.Error
+}</span>
+
+func (p *postDao) GetPostsByAuthorIdsAndTimeWindow(ctx context.Context, authorIds []int, from, till time.Time) ([]*model.Post, error) <span class="cov8" title="1">{
+        var posts []*model.Post
+        rslt := p.db.Where("author_id in ? and created_at&gt;= ? and created_at &lt;= ? ", authorIds, from, till).Order("created_at desc").Find(&amp;posts)
+        return posts, rslt.Error
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package dao
+
+import (
+        "context"
+        "twitter/internal/db"
+        "twitter/internal/model"
+
+        "gorm.io/gorm"
+)
+
+func AutoMigrate(migratable Migratable) <span class="cov0" title="0">{
+        migratable.AutoMigrate(false)
+}</span>
+
+type Migratable interface {
+        AutoMigrate(bool)
+}
+
+type TimelineDao interface {
+        Create(ctx context.Context, mdl *model.Timeline) (*model.Timeline, error)
+        GetTimelineForUser(ctx context.Context, userId int, pageNo int, pageSize int) ([]*model.Timeline, error)
+        CreateInBatches(ctx context.Context, mdl []*model.Timeline) ([]*model.Timeline, error)
+}
+
+type timelineDao struct {
+        db *gorm.DB
+}
+
+func NewTimelineDao(db *db.Db) TimelineDao <span class="cov8" title="1">{
+        return &amp;timelineDao{db: db.DB}
+}</span>
+
+func (t *timelineDao) AutoMigrate(dropTable bool) <span class="cov8" title="1">{
+        if dropTable </span><span class="cov0" title="0">{
+                t.db.Migrator().DropTable(&amp;model.Timeline{})
+        }</span>
+        <span class="cov8" title="1">t.db.AutoMigrate(&amp;model.Timeline{})</span>
+}
+
+func (t *timelineDao) GetTimelineForUser(ctx context.Context, userId int, pageNo int, pageSize int) ([]*model.Timeline, error) <span class="cov8" title="1">{
+        var tmln []*model.Timeline
+        rslt := t.db.Where("user_id = ?", userId).Limit(pageSize).Offset((pageNo) * pageSize).Order("created_at desc").Find(&amp;tmln)
+        return tmln, rslt.Error
+}</span>
+
+func (t *timelineDao) Create(ctx context.Context, mdl *model.Timeline) (*model.Timeline, error) <span class="cov8" title="1">{
+        rslt := t.db.Create(mdl)
+        return mdl, rslt.Error
+}</span>
+
+func (t *timelineDao) CreateInBatches(ctx context.Context, mdl []*model.Timeline) ([]*model.Timeline, error) <span class="cov8" title="1">{
+        rslt := t.db.CreateInBatches(&amp;mdl, len(mdl))
+        return mdl, rslt.Error
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package dao
+
+import (
+        "context"
+        "fmt"
+        "time"
+        "twitter/internal/db"
+        "twitter/internal/model"
+
+        "gorm.io/gorm"
+)
+
+type UserDao interface {
+        Create(ctx context.Context, mdl *model.User) (*model.User, error)
+        GetById(ctx context.Context, userId int) (*model.User, error)
+        GetByIds(ctx context.Context, userIds []int) ([]*model.User, error)
+        GetAll(ctx context.Context) ([]*model.User, error)
+        IsFollowing(ctx context.Context, followerId int, followeeId int) (*model.Follower, error)
+        Follow(ctx context.Context, followerId int, followeeId int) (*model.Follower, error)
+        GetFollowees(ctx context.Context, userId int) ([]*model.Follower, error)
+        GetFollowers(ctx context.Context, userId int) ([]*model.Follower, error)
+}
+
+type userDao struct {
+        db *gorm.DB
+}
+
+func NewUserDao(db *db.Db) UserDao <span class="cov8" title="1">{
+        return &amp;userDao{db: db.DB}
+}</span>
+
+func (u *userDao) AutoMigrate(dropTable bool) <span class="cov8" title="1">{
+        if dropTable </span><span class="cov0" title="0">{
+                u.db.Migrator().DropTable(&amp;model.User{}, &amp;model.Follower{})
+        }</span>
+
+        <span class="cov8" title="1">u.db.AutoMigrate(&amp;model.User{})
+        u.db.AutoMigrate(&amp;model.Follower{})</span>
+}
+
+func (u *userDao) Create(ctx context.Context, mdl *model.User) (*model.User, error) <span class="cov8" title="1">{
+        rslt := u.db.Create(mdl)
+        return mdl, rslt.Error
+}</span>
+
+func (u *userDao) GetById(ctx context.Context, userId int) (*model.User, error) <span class="cov8" title="1">{
+        var (
+                user model.User
+        )
+        rslt := u.db.First(&amp;user, userId)
+        if user.Id == 0 </span><span class="cov8" title="1">{
+                return nil, EntityNotFound(&amp;user, userId)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;user, rslt.Error</span>
+}
+func (u *userDao) GetByIds(ctx context.Context, userIds []int) ([]*model.User, error) <span class="cov8" title="1">{
+        var (
+                users []*model.User
+        )
+        rslt := u.db.Where("id in ?", userIds).Find(&amp;users)
+        return users, rslt.Error
+}</span>
+
+func (u *userDao) GetAll(ctx context.Context) ([]*model.User, error) <span class="cov8" title="1">{
+        var (
+                users []*model.User
+        )
+        u.db.Find(&amp;users)
+        return users, nil
+}</span>
+
+func (u *userDao) IsFollowing(ctx context.Context, followerId int, followeeId int) (*model.Follower, error) <span class="cov8" title="1">{
+        var followers []*model.Follower
+        rslt := u.db.Where("follower_id = ? and followee_id = ?", followerId, followeeId).Find(&amp;followers)
+        if len(followers) == 0 </span><span class="cov8" title="1">{
+                return nil, db.NoEntriesFound{}
+        }</span>
+        <span class="cov8" title="1">return followers[0], rslt.Error</span>
+}
+
+func (u *userDao) Follow(ctx context.Context, followerId int, followeeId int) (*model.Follower, error) <span class="cov8" title="1">{
+        var follower model.Follower
+        follower.FollowerId = followerId
+        follower.FolloweeId = followeeId
+        follower.CreatedAt = time.Now()
+
+        rslt := u.db.Create(&amp;follower)
+        if rslt.Error == nil </span><span class="cov8" title="1">{
+                u.db.Model(&amp;model.User{}).Where("id = ?", followeeId).Update("follower_count", gorm.Expr("follower_count + ?", 1))
+        }</span>
+
+        <span class="cov8" title="1">return &amp;follower, rslt.Error</span>
+
+}
+
+func (u *userDao) GetFollowers(ctx context.Context, userId int) ([]*model.Follower, error) <span class="cov8" title="1">{
+        var followers []*model.Follower
+        rslt := u.db.Where("followee_id = ?", userId).Find(&amp;followers)
+        return followers, rslt.Error
+}</span>
+
+func (u *userDao) GetFollowees(ctx context.Context, userId int) ([]*model.Follower, error) <span class="cov8" title="1">{
+        var followers []*model.Follower
+        rslt := u.db.Where("follower_id = ?", userId).Find(&amp;followers)
+        return followers, rslt.Error
+}</span>
+
+func EntityNotFound(ent model.Entity, id int) error <span class="cov8" title="1">{
+
+        return fmt.Errorf(fmt.Sprintf("%s entity not found with id %d", ent.GetName(), id))
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package db
+
+import (
+        "fmt"
+        "sync"
+        "testing"
+
+        "gorm.io/driver/sqlite"
+        "gorm.io/gorm"
+)
+
+type Db struct {
+        DB *gorm.DB
+}
+
+func SetupDb() *Db <span class="cov8" title="1">{
+        db, err := gorm.Open(sqlite.Open("twitter.db"), &amp;gorm.Config{})
+        if err != nil </span><span class="cov0" title="0">{
+                panic(fmt.Sprintf("err opening connection to sql lite %s", err))</span>
+        }
+        <span class="cov8" title="1">return &amp;Db{DB: db}</span>
+}
+func SetupTestDb(t *testing.T) (*gorm.DB, error) <span class="cov0" title="0">{
+        t.Helper()
+        once := sync.OnceValues(func() (*gorm.DB, error) </span><span class="cov0" title="0">{
+                return gorm.Open(sqlite.Open("file::memory:?cache=shared"), &amp;gorm.Config{})
+        }</span>)
+        <span class="cov0" title="0">return once()</span>
+
+}
+
+type NoEntriesFound struct{}
+
+func (n NoEntriesFound) Error() string <span class="cov0" title="0">{
+        return "No entries found"
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package model
+
+import (
+        "time"
+        "twitter/internal/dto"
+)
+
+type Entity interface {
+        GetName() string
+}
+
+type Post struct {
+        Id        int       `gorm:"primaryKey;column:id"`
+        AuthorId  int       `gorm:"primaryKey;column:author_id"`
+        Subject   string    `gorm:"primaryKey;column:subject"`
+        Contents  string    `gorm:"primaryKey;column:contents"`
+        CreatedAt time.Time `gorm:"primaryKey;column:created_at"`
+}
+
+func (p *Post) ToDto() *dto.Post <span class="cov8" title="1">{
+        return &amp;dto.Post{
+                Id:        dto.Id(p.Id),
+                AuthorId:  dto.Id(p.AuthorId),
+                Subject:   p.Subject,
+                Contents:  p.Contents,
+                CreatedAt: p.CreatedAt,
+        }
+
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package model
+
+import (
+        "time"
+        "twitter/internal/dto"
+)
+
+type Timeline struct {
+        Id        int       `gorm:"primaryKey;column:id"`
+        UserId    int       `gorm:"column:user_id"`
+        PostId    int       `gorm:"column:post_id"`
+        AuthorId  int       `gorm:"column:author_id"`
+        Subject   string    `gorm:"column:subject"`
+        Contents  string    `gorm:"column:contents"`
+        CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func ToTimelineDto(ts []*Timeline) dto.Timeline <span class="cov8" title="1">{
+        dtoTmln := dto.Timeline{
+                Posts: make([]*dto.Post, len(ts)),
+        }
+        for i, t := range ts </span><span class="cov8" title="1">{
+                dtoTmln.Posts[i] = &amp;dto.Post{
+                        Id:        dto.Id(t.PostId),
+                        AuthorId:  dto.Id(t.AuthorId),
+                        Subject:   t.Subject,
+                        Contents:  t.Contents,
+                        CreatedAt: t.CreatedAt,
+                }
+
+        }</span>
+        <span class="cov8" title="1">return dtoTmln</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package model
+
+import (
+        "time"
+        "twitter/internal/dto"
+)
+
+type User struct {
+        Id            int            `gorm:"primaryKey;column:id"`
+        Email         string         `gorm:"column:email"`
+        UserName      string         `gorm:"column:user_name"`
+        UserStatus    dto.UserStatus `gorm:"column:user_status"`
+        FollowerCount int            `gorm:"column:follower_count"`
+        CreatedAt     time.Time      `gorm:"column:created_at"`
+        PasswordHash  string         `gorm:"column:password_hash"`
+}
+
+func (p *User) GetName() string <span class="cov8" title="1">{
+        return "User"
+}</span>
+
+func (u *User) ToDto() *dto.User <span class="cov8" title="1">{
+        return &amp;dto.User{
+                Id:            (dto.Id)(u.Id),
+                Email:         u.Email,
+                UserName:      u.UserName,
+                UserStatus:    u.UserStatus,
+                FollowerCount: u.FollowerCount,
+                CreatedAt:     u.CreatedAt,
+        }
+}</span>
+
+func FromUserDto(u *dto.User) *User <span class="cov8" title="1">{
+        return &amp;User{
+                Id:            (int)(u.Id),
+                Email:         u.Email,
+                UserName:      u.UserName,
+                UserStatus:    u.UserStatus,
+                FollowerCount: u.FollowerCount,
+                CreatedAt:     u.CreatedAt,
+        }
+}</span>
+
+type Follower struct {
+        Id         int       `gorm:"primaryKey;column:id"`
+        FollowerId int       `gorm:"column:follower_id"`
+        FolloweeId int       `gorm:"column:followee_id"`
+        CreatedAt  time.Time `gorm:"column:created_at"`
+}
+
+func (f *Follower) ToDto() *dto.Follower <span class="cov8" title="1">{
+        return &amp;dto.Follower{
+
+                FollowId:   dto.Id(f.Id),
+                FollowerId: dto.Id(f.FollowerId),
+                FolloweeId: dto.Id(f.FolloweeId),
+                CreatedAt:  f.CreatedAt,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service
+
+import (
+        "context"
+        "fmt"
+        "twitter/internal/common"
+        "twitter/internal/dao"
+        "twitter/internal/db"
+        "twitter/internal/dto"
+        "twitter/internal/model"
+)
+
+func NewPostService(dependencies *ServiceDependencies, db *db.Db, lg common.Logger) PostService <span class="cov8" title="1">{
+        postDao := dao.NewPostDao(db)
+        dao.AutoMigrate(postDao.(dao.Migratable))
+        return &amp;postService{
+                dependencies:   dependencies,
+                postDao:        postDao,
+                postCreateHook: (dependencies.TimelineService).(AfterPostCreate),
+                lg:             lg,
+        }
+}</span>
+
+type postService struct {
+        dependencies   *ServiceDependencies
+        postDao        dao.PostDao
+        postCreateHook AfterPostCreate
+        lg             common.Logger
+}
+
+func (p *postService) CreatePost(ctx context.Context, req *dto.CreatePostRequest) (*dto.CreatePostResponse, error) <span class="cov8" title="1">{
+        mdl := &amp;model.Post{
+                AuthorId: (int)(req.AuthorId),
+                Contents: req.Contents,
+                Subject:  req.Subject,
+        }
+        pst, err := p.postDao.Create(ctx, mdl)
+
+        if err != nil </span><span class="cov0" title="0">{
+                p.lg.Println(fmt.Sprintf("Post create err %s", err))
+
+        }</span>
+        <span class="cov8" title="1">resp := pst.ToDto()
+        p.postCreateHook.AfterPostCreateHook(ctx, resp)
+        return &amp;dto.CreatePostResponse{Post: *resp}, err</span>
+}
+
+func (p *postService) GetPostsByAuthorIdsAndTimeWindow(ctx context.Context, req *dto.GetPostsByAuthorIdsAndTimeWindowRequest) (*dto.GetPostsByAuthorIdsAndTimeWindowResponse, error) <span class="cov8" title="1">{
+        psts, err := p.postDao.GetPostsByAuthorIdsAndTimeWindow(ctx, req.AuthorIds, req.From, req.Till)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">resp := &amp;dto.GetPostsByAuthorIdsAndTimeWindowResponse{Posts: make([]*dto.Post, len(psts))}
+        for i, pst := range psts </span><span class="cov8" title="1">{
+                resp.Posts[i] = pst.ToDto()
+        }</span>
+        <span class="cov8" title="1">return resp, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package service
+
+import (
+        "context"
+        "twitter/internal/common"
+        "twitter/internal/db"
+        "twitter/internal/dto"
+)
+
+type PostService interface {
+        CreatePost(context.Context, *dto.CreatePostRequest) (*dto.CreatePostResponse, error)
+        GetPostsByAuthorIdsAndTimeWindow(context.Context, *dto.GetPostsByAuthorIdsAndTimeWindowRequest) (*dto.GetPostsByAuthorIdsAndTimeWindowResponse, error)
+}
+type AfterPostCreate interface {
+        AfterPostCreateHook(context.Context, *dto.Post)
+}
+
+type UserService interface {
+        CreateUser(context.Context, *dto.CreateUserRequest) (*dto.CreateUserResponse, error)
+        FollowUser(context.Context, *dto.FollowUserRequest) (*dto.FollowUserResponse, error)
+        GetFollowingUsers(context.Context, *dto.GetFollowingUsersRequest) (*dto.GetFollowingUsersResponse, error)
+
+        GetFollowerUsers(context.Context, *dto.GetFollowerUsersRequest) (*dto.GetFollowerUsersResponse, error)
+        GetAllUsers(context.Context, *dto.GetAllUsersRequest) (*dto.GetAllUsersResponse, error)
+        GetUser(context.Context, *dto.GetUserRequest) (*dto.GetUserResponse, error)
+        GetUsers(context.Context, []int) (*dto.GetAllUsersResponse, error)
+}
+
+type TimelineService interface {
+        GetTimelineForUser(context.Context, *dto.GetTimelineForUserRequest) (*dto.GetTimelineForUserResponse, error)
+}
+
+type ServiceDependencies struct {
+        UserService     UserService
+        PostService     PostService
+        TimelineService TimelineService
+}
+
+func NewServiceDependencies(db *db.Db, lg common.Logger) *ServiceDependencies <span class="cov8" title="1">{
+        sdp := &amp;ServiceDependencies{}
+        sdp.UserService = NewUserService(sdp, db, lg)
+        sdp.TimelineService = NewTimelineService(sdp, db, lg)
+        sdp.PostService = NewPostService(sdp, db, lg)
+        return sdp
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package service
+
+import (
+        "context"
+        "fmt"
+        "twitter/internal/common"
+        "twitter/internal/dao"
+        "twitter/internal/db"
+        "twitter/internal/dto"
+        "twitter/internal/model"
+)
+
+const (
+        POPPULAR_FOLLOW_COUNT = 3
+        PAGE_SIZE             = 10
+)
+
+func NewTimelineService(dependencies *ServiceDependencies, db *db.Db, lg common.Logger) TimelineService <span class="cov8" title="1">{
+        timelineDao := dao.NewTimelineDao(db)
+        dao.AutoMigrate(timelineDao.(dao.Migratable))
+
+        timelineServ := &amp;timelineService{
+                dependencies:    dependencies,
+                timelineDao:     timelineDao,
+                postCreatedChan: make(chan *dto.Post, 10),
+                lg:              lg,
+        }
+        go PostCreatedConsumer(timelineServ)
+        return timelineServ
+}</span>
+
+func PostCreatedConsumer(timelineService *timelineService) <span class="cov8" title="1">{
+        for pst := range timelineService.postCreatedChan </span><span class="cov8" title="1">{
+                err := timelineService.UpdateTimelines(context.Background(), pst)
+                if err != nil </span><span class="cov8" title="1">{
+                        timelineService.lg.Println(fmt.Sprintf("Error updating timeline %s", err))
+                }</span>
+
+        }
+
+}
+
+type timelineService struct {
+        dependencies    *ServiceDependencies
+        timelineDao     dao.TimelineDao
+        postCreatedChan chan *dto.Post
+        lg              common.Logger
+}
+
+func (t *timelineService) UpdateTimelines(ctx context.Context, pst *dto.Post) error <span class="cov8" title="1">{
+        author, err := t.dependencies.UserService.GetUser(ctx, &amp;dto.GetUserRequest{UserId: pst.AuthorId})
+
+        if err != nil </span><span class="cov8" title="1">{
+
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if author.FollowerCount &gt;= POPPULAR_FOLLOW_COUNT </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">followers, err := t.dependencies.UserService.GetFollowerUsers(ctx, &amp;dto.GetFollowerUsersRequest{PrimaryUserId: pst.AuthorId})
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">timelineEntries := make([]*model.Timeline, 0, len(followers.FollowerUsers))
+        for _, follower := range followers.FollowerUsers </span><span class="cov8" title="1">{
+                tmln := &amp;model.Timeline{
+                        UserId:    (int)(follower.FollowerId),
+                        PostId:    (int)(pst.Id),
+                        AuthorId:  (int)(pst.AuthorId),
+                        Subject:   pst.Subject,
+                        Contents:  pst.Contents,
+                        CreatedAt: pst.CreatedAt,
+                }
+                timelineEntries = append(timelineEntries, tmln)
+        }</span>
+        <span class="cov8" title="1">_, err = t.timelineDao.CreateInBatches(ctx, timelineEntries)
+        return err</span>
+
+}
+
+func (t *timelineService) GetTimelineForUser(ctx context.Context, req *dto.GetTimelineForUserRequest) (*dto.GetTimelineForUserResponse, error) <span class="cov8" title="1">{
+        resp := &amp;dto.GetTimelineForUserResponse{
+                Timeline: dto.Timeline{
+                        Posts: []*dto.Post{},
+                },
+                FamousPosts: []*dto.Post{},
+                TimelinePaginationResponse: dto.TimelinePaginationResponse{
+                        PageNo: req.PageNo,
+                },
+        }
+        tmln, err := t.timelineDao.GetTimelineForUser(ctx, (int)(req.UserId), req.PageNo, PAGE_SIZE)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">resp.Timeline = model.ToTimelineDto(tmln)
+
+        if len(tmln) &gt; 0 </span><span class="cov8" title="1">{
+                till := tmln[0].CreatedAt
+                from := tmln[len(tmln)-1].CreatedAt
+
+                followings, err := t.dependencies.UserService.GetFollowingUsers(ctx, &amp;dto.GetFollowingUsersRequest{PrimaryUserId: req.UserId})
+                usrIds := make([]int, len(followings.FollowingUsers))
+                for _, usr := range followings.FollowingUsers </span><span class="cov8" title="1">{
+                        usrIds = append(usrIds, (int)(usr.FolloweeId))
+                }</span>
+                <span class="cov8" title="1">users, err := t.dependencies.UserService.GetUsers(ctx, usrIds)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">famUsrIds := make([]int, 0, len(users.Users))
+                for _, usr := range users.Users </span><span class="cov8" title="1">{
+                        if usr.FollowerCount &gt;= POPPULAR_FOLLOW_COUNT </span><span class="cov0" title="0">{
+                                famUsrIds = append(famUsrIds, (int)(usr.Id))
+                        }</span>
+                }
+                <span class="cov8" title="1">popularPosts, err := t.dependencies.PostService.GetPostsByAuthorIdsAndTimeWindow(ctx, &amp;dto.GetPostsByAuthorIdsAndTimeWindowRequest{
+                        AuthorIds: famUsrIds,
+                        From:      from,
+                        Till:      till,
+                })
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">if popularPosts != nil </span><span class="cov8" title="1">{
+                        resp.FamousPosts = popularPosts.Posts
+                }</span>
+
+        }
+        <span class="cov8" title="1">return resp, nil</span>
+
+}
+
+func (t *timelineService) AfterPostCreateHook(ctx context.Context, createdPost *dto.Post) <span class="cov8" title="1">{
+        fmt.Println("AfterPostCreateHook called")
+        t.postCreatedChan &lt;- createdPost
+}</span>
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package service
+
+import (
+        "context"
+        "twitter/internal/common"
+        "twitter/internal/dao"
+        "twitter/internal/db"
+        "twitter/internal/dto"
+        "twitter/internal/model"
+)
+
+func NewUserService(dependencies *ServiceDependencies, db *db.Db, lg common.Logger) UserService <span class="cov8" title="1">{
+        userDao := dao.NewUserDao(db)
+        dao.AutoMigrate(userDao.(dao.Migratable))
+        return &amp;userService{dependencies: dependencies, userDao: userDao, lg: lg}
+}</span>
+
+type userService struct {
+        dependencies *ServiceDependencies
+        userDao      dao.UserDao
+        lg           common.Logger
+}
+
+func (u *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.CreateUserResponse, error) <span class="cov8" title="1">{
+        mdl := model.FromUserDto(&amp;dto.User{
+                Email:    req.Email,
+                UserName: req.UserName,
+                //Password: req.Pa
+        })
+        mdl, err := u.userDao.Create(ctx, mdl)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return &amp;dto.CreateUserResponse{User: *(mdl.ToDto())}, nil</span>
+}
+
+func (u *userService) FollowUser(ctx context.Context, req *dto.FollowUserRequest) (*dto.FollowUserResponse, error) <span class="cov8" title="1">{
+        follower, err := u.userDao.IsFollowing(ctx, int(req.FollowerUserId), int(req.FollowingUserId))
+        if follower == nil </span><span class="cov8" title="1">{
+                follower, err = u.userDao.Follow(ctx, int(req.FollowerUserId), int(req.FollowingUserId))
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+        <span class="cov8" title="1">resp := &amp;dto.FollowUserResponse{
+                Follower: *(follower.ToDto()),
+        }
+        return resp, nil</span>
+
+}
+
+func (u *userService) GetFollowingUsers(ctx context.Context, req *dto.GetFollowingUsersRequest) (*dto.GetFollowingUsersResponse, error) <span class="cov8" title="1">{
+        followees, err := u.userDao.GetFollowees(ctx, (int)(req.PrimaryUserId))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">resp := &amp;dto.GetFollowingUsersResponse{
+                FollowingUsers: make([]*dto.Follower, len(followees)),
+        }
+        for i, flwr := range followees </span><span class="cov8" title="1">{
+                resp.FollowingUsers[i] = flwr.ToDto()
+        }</span>
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+func (u *userService) GetFollowerUsers(ctx context.Context, req *dto.GetFollowerUsersRequest) (*dto.GetFollowerUsersResponse, error) <span class="cov8" title="1">{
+        followers, err := u.userDao.GetFollowers(ctx, int(req.PrimaryUserId))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">resp := &amp;dto.GetFollowerUsersResponse{
+                FollowerUsers: make([]*dto.Follower, len(followers)),
+        }
+        for i, flwr := range followers </span><span class="cov8" title="1">{
+                resp.FollowerUsers[i] = flwr.ToDto()
+        }</span>
+        <span class="cov8" title="1">return resp, nil</span>
+}
+func (u *userService) GetAllUsers(ctx context.Context, req *dto.GetAllUsersRequest) (*dto.GetAllUsersResponse, error) <span class="cov8" title="1">{
+        users, err := u.userDao.GetAll(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+
+        }</span>
+        <span class="cov8" title="1">resp := &amp;dto.GetAllUsersResponse{
+                Users: make([]*dto.User, len(users)),
+        }
+        for i, usr := range users </span><span class="cov8" title="1">{
+                resp.Users[i] = usr.ToDto()
+        }</span>
+        <span class="cov8" title="1">return resp, err</span>
+
+}
+func (u *userService) GetUser(ctx context.Context, req *dto.GetUserRequest) (*dto.GetUserResponse, error) <span class="cov8" title="1">{
+
+        user, err := u.userDao.GetById(ctx, (int)(req.UserId))
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+
+        }</span>
+        <span class="cov8" title="1">return &amp;dto.GetUserResponse{
+                User: *(user.ToDto()),
+        }, nil</span>
+
+}
+func (u *userService) GetUsers(ctx context.Context, ids []int) (*dto.GetAllUsersResponse, error) <span class="cov8" title="1">{
+
+        users, err := u.userDao.GetByIds(ctx, ids)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+
+        }</span>
+        <span class="cov8" title="1">resp := &amp;dto.GetAllUsersResponse{
+                Users: make([]*dto.User, len(users)),
+        }
+        for i, usr := range users </span><span class="cov8" title="1">{
+                resp.Users[i] = usr.ToDto()
+        }</span>
+        <span class="cov8" title="1">return resp, err</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
