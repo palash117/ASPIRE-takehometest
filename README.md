@@ -24,8 +24,8 @@ The system is divided into 4 modules which right now are written in all together
 	Table containing timeline contents for users.  The data is duplicated from posts. 
 	The rows are indexed by its primary key and also by user_id column. This is to speed up the queries for fetching all the rows for a user. 
 	Since the application is supposed to be read heavy for normal usecases, When ever a Post is created by a user , a row for each user is created in timeline table containing the post details.
-![[https://raw.githubusercontent.com/palash117/ASPIRE-takehometest/refs/heads/main/tableStructure.png]]
-![[sequenceDiagram.png]]
+![Table Structure](https://raw.githubusercontent.com/palash117/ASPIRE-takehometest/refs/heads/main/tableStructure.png)
+![Sequence Diagram](https://raw.githubusercontent.com/palash117/ASPIRE-takehometest/refs/heads/main/sequenceDiagram.png)
 ### Api list:
 - Post 
 	- Post /twitter/{user_id}/post
